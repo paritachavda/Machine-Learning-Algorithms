@@ -1,0 +1,127 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+import random
+import operator
+import math
+
+data = pd.read_csv('iris.csv')
+data = data.drop(['Id'],axis=1)
+
+columns = list(data.columns)
+features = columns[:len(columns)-1]
+class_labels = list(data[columns[-1]])
+df = data[features]
+
+num_attr = len(df.columns) - 1
+k = 3
+MAX_ITER = 100
+n = len(df)
+m = 2.00
+
+def initializeMembershipMatrix():
+    membership_mat = list()
+    for i in range(n):
+        random_num_list = [random.random() for i in range(k)]
+        summation = sum(random_num_list)
+        temp_list = [x/summation for x in random_num_list]
+        membership_mat.append(temp_list)
+    return membership_mat
+
+  
+
+
+def calculateClusterCenter(membership_mat):
+    cluster_mem_val = list(zip(*membership_mat))
+    cluster_centers = list()
+    for j in range(k):
+        x = list(cluster_mem_val[j])
+        xraised = [e ** m for e in x]
+        denominator = sum(xraised)
+        temp_num = list()
+        for i in range(n):
+            data_point = list(df.iloc[i])
+            prod = [xraised[i] * val for val in data_point]
+            temp_num.append(prod)
+        numerator = map(sum, zip(*temp_num))
+        center = [z/denominator for z in numerator]
+        cluster_centers.append(center)
+    return cluster_centers
+
+def updateMembershipValue(membership_mat, cluster_centers):
+    p = float(2/(m-1))
+    for i in range(n):
+        x = list(df.iloc[i])
+        distances = [np.linalg.norm(list(map(operator.sub, x, cluster_centers[j]))) for j in range(k)]
+        for j in range(k):
+            den = sum([math.pow(float(distances[j]/distances[c]), p) for c in range(k)])
+            membership_mat[i][j] = float(1/den)       
+    return membership_mat
+def getClusters(membership_mat):
+    cluster_labels = list()
+    for i in range(n):
+        max_val, idx = max((val, idx) for (idx, val) in enumerate(membership_mat[i]))
+        cluster_labels.append(idx)
+    return cluster_labels  
+membership_mat = initializeMembershipMatrix()
+
+cluster_centers = calculateClusterCenter(membership_mat)
+cluster_centers = np.array(cluster_centers)
+
+
+# Plot the data and the centers generated as random
+colors=['orange', 'blue', 'green']
+plt.figure(1)
+for i in range(n):
+    plt.scatter(df.iloc[i, 0], df.iloc[i,1], s=7, color = colors[int(category[i])])
+plt.scatter(cluster_centers[:,0],cluster_centers[:,1], marker='*', c='g', s=150)
+
+def fuzzyCMeansClustering():
+    # Membership Matrix
+    membership_mat = initializeMembershipMatrix()
+    curr = 0
+    while curr <= MAX_ITER:
+        cluster_centers = calculateClusterCenter(membership_mat)
+        membership_mat = updateMembershipValue(membership_mat, cluster_centers)
+        cluster_labels = getClusters(membership_mat)
+        curr += 1
+
+    return cluster_labels, cluster_centers
+
+labels, centers = fuzzyCMeansClustering()
+labels = np.array(labels)
+labels = labels.astype(str)
+for i in range(len(labels)):
+  
+  if labels[i]=='0':
+    labels[i] = 'Iris-setosa'
+  elif labels[i]=='1':
+    labels[i] = 'Iris-versicolor'  
+  elif labels[i]=='2':
+    labels[i] = 'Iris-virginica'  
+
+
+centers = np.array(centers)
+colors=['orange', 'blue', 'green']
+plt.figure(2)
+for i in range(n):
+    plt.scatter(df.iloc[i, 0], df.iloc[i,1], s=7, color = colors[int(category[i])])
+plt.scatter(centers[:,0], centers[:,1], marker='*', c='g', s=150)
+
+print(“predicted centres are”)
+print(*centres)
+
+from sklearn.metrics import accuracy_score
+print(“accuracy of predicted_class is”)
+accuracy_score(labels,class_labels)
+
+print(“cluster centre using in-built function are ”)
+import skfuzzy as fuzz
+
+cntr, u, u0, d, jm, p, fpc = fuzz.cluster.cmeans(
+        df, k, 2, error=0.005, maxiter=100, init=None)
+
+print(*centers)
+
+print(“accuracy is”)
+accuracy_score(labels,class_labels)
