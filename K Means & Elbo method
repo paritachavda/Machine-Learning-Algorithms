@@ -1,0 +1,49 @@
+import pandas as pd
+import numpy as np
+
+xl = pd.ExcelFile("kmeans_data.xlsx")
+df = xl.parse("Sheet1", header=None)
+
+from sklearn.cluster import KMeans
+from sklearn import metrics
+from scipy.spatial.distance import cdist
+import numpy as np
+import matplotlib.pyplot as plt
+
+plt.plot()
+plt.title('Dataset')
+plt.scatter(df[0],df[1])
+plt.show()
+
+distortions = []
+K = range(1,10)
+for k in K:
+    kmeanModel = KMeans(n_clusters=k).fit(df)
+    kmeanModel.fit(df)
+    distortions.append(sum(np.min(cdist(df, kmeanModel.cluster_centers_, 'euclidean'), axis=1)) / df.shape[0])
+
+# Plot the elbow
+plt.plot(K, distortions, 'bx-')
+plt.xlabel('k')
+plt.ylabel('Distortion')
+plt.title('The Elbow Method showing the optimal k')
+plt.show()
+
+distortions = []
+centers = []
+# Initializing KMeans
+for i in range(100):
+  kmeans = KMeans(n_clusters=3)
+# Fitting with inputs
+  kmeans = kmeans.fit(df)
+  distortions.append(sum(np.min(cdist(df, kmeans.cluster_centers_, 'euclidean'), axis=1)) / df.shape[0])
+  centers.append(kmeans.cluster_centers_)
+centers = np.array(centers)
+min_cost  = np.argmin(distortions)
+min_centers = centers[min_cost]
+
+plt.plot()
+plt.title('clustering')
+plt.scatter(df[0],df[1])
+plt.scatter(min_centers[:,0],min_centers[:,1], marker='*', c='r', s=150)
+plt.show()
